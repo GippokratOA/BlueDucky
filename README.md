@@ -1,4 +1,4 @@
-# BlueDucky (Android) 🦆
+# BlueDucky (Android) 🦆 modified by GippokratOA and On1onss
 
 Thanks to all the people at HackNexus. Make sure you come join us on VC !
 https://discord.gg/HackNexus
