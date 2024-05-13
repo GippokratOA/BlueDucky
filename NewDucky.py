@@ -168,7 +168,7 @@ class L2CAPConnectionManager:
 class ReconnectionRequiredException(Exception):
 	def __init__(self, message, current_line=0, current_position=0):
 		super().__init__(message)
-		time.sleep(2)
+		#time.sleep(2)
 		self.current_line = current_line
 		self.current_position = current_position
 
@@ -180,17 +180,17 @@ class L2CAPClient:
 		self.sock = None
 
 	def encode_keyboard_input(*args):
-	  keycodes = []
-	  flags = 0
-	  for a in args:
-		if isinstance(a, Key_Codes):
-		  keycodes.append(a.value)
-		elif isinstance(a, Modifier_Codes):
-		  flags |= a.value
-	  assert(len(keycodes) <= 7)
-	  keycodes += [0] * (7 - len(keycodes))
-	  report = bytes([0xa1, 0x01, flags, 0x00] + keycodes)
-	  return report
+		keycodes = []
+		flags = 0
+		for a in args:
+			if isinstance(a, Key_Codes):
+				keycodes.append(a.value)
+			elif isinstance(a, Modifier_Codes):
+				flags |= a.value
+		assert(len(keycodes) <= 7)
+		keycodes += [0] * (7 - len(keycodes))
+		report = bytes([0xa1, 0x01, flags, 0x00] + keycodes)
+		return report
 
 	def close(self):
 		if self.connected:
@@ -307,6 +307,7 @@ def process_duckyscript(client, duckyscript, current_line=0, current_position=0)
 	time.sleep(0.5)
 
 	shift_required_characters = "!@#$%^&*()_+{}|:\"<>?ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	char_dir = {' ': 'Key_Codes.SPACE', '[': 'Key_Codes.LEFTBRACE', ']': 'Key_Codes.RIGHTBRACE', ';': 'Key_Codes.SEMICOLON', "'": 'Key_Codes.QUOTE', '/': 'Key_Codes.SLASH', '.': 'Key_Codes.DOT', ',': 'Key_Codes.COMMA', '|': 'Key_Codes.PIPE', '-': 'Key_Codes.MINUS', '=': 'Key_Codes.EQUAL'}
 
 	try:
 		for line_number, line in enumerate(duckyscript):
@@ -365,28 +366,9 @@ def process_duckyscript(client, duckyscript, current_line=0, current_position=0)
 						if char.isdigit():
 							key_code = getattr(Key_Codes, f"_{char}")
 							client.send_keypress(key_code)
-						elif char == " ":
-							client.send_keypress(Key_Codes.SPACE)
-						elif char == "[":
-							client.send_keypress(Key_Codes.LEFTBRACE)
-						elif char == "]":
-							client.send_keypress(Key_Codes.RIGHTBRACE)
-						elif char == ";":
-							client.send_keypress(Key_Codes.SEMICOLON)
-						elif char == "'":
-							client.send_keypress(Key_Codes.QUOTE)
-						elif char == "/":
-							client.send_keypress(Key_Codes.SLASH)
-						elif char == ".":
-							client.send_keypress(Key_Codes.DOT)
-						elif char == ",":
-							client.send_keypress(Key_Codes.COMMA)
-						elif char == "|":
-							client.send_keypress(Key_Codes.PIPE)
-						elif char == "-":
-							client.send_keypress(Key_Codes.MINUS)
-						elif char == "=":
-							client.send_keypress(Key_Codes.EQUAL)
+						# Изменил код говна - надеюсь это будет работать
+						elif char in char_dir:
+							client.send_keypress(char_dir[char])
 						elif char in shift_required_characters:
 							key_code_str = char_to_key_code(char)
 							if key_code_str:
@@ -601,7 +583,8 @@ def setup_bluetooth(target_address, adapter_id):
 	profile_proc.start()
 	child_processes.append(profile_proc)
 	adapter = Adapter(adapter_id)
-	adapter.set_property("name", "Robot POC")
+	# Не меняем имя
+	#adapter.set_property("name", "Robot POC")
 	adapter.set_property("class", 0x002540)
 	adapter.power(True)
 	return adapter
@@ -678,7 +661,7 @@ def main():
 		try:
 			hid_interrupt_client = setup_and_connect(connection_manager, target_address, adapter_id)
 			process_duckyscript(hid_interrupt_client, duckyscript, current_line, current_position)
-			time.sleep(2)
+			#time.sleep(2)
 			break  # Exit loop if successful
 		except ReconnectionRequiredException as e:
 			log.info("Reconnection required. Attempting to reconnect...")
@@ -686,7 +669,7 @@ def main():
 			current_position = e.current_position
 			connection_manager.close_all()
 			# Sleep before retrying to avoid rapid reconnection attempts
-			time.sleep(2)
+			#time.sleep(2)
 			
 	#process_duckyscript(hid_interrupt_client, duckyscript)
 
