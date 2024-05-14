@@ -165,7 +165,7 @@ def is_valid_mac_address(mac_address):
 
 def Keyboard_real_time_input():
     char_input = str(input('Input command: '))
-    return char_input
+    return [char_input]
 
 # Function to read DuckyScript from file
 def read_duckyscript(filename):
