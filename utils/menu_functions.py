@@ -162,6 +162,11 @@ def is_valid_mac_address(mac_address):
     mac_address_pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
     return mac_address_pattern.match(mac_address) is not None
 
+
+def Keyboard_real_time_input():
+    char_input = str(input('Input command: '))
+    return char_input
+
 # Function to read DuckyScript from file
 def read_duckyscript(filename):
     if os.path.exists(filename):

@@ -4,7 +4,7 @@ from pydbus import SystemBus
 from enum import Enum
 import os
 
-from utils.menu_functions import (main_menu, read_duckyscript, run, restart_bluetooth_daemon, get_target_address)
+from utils.menu_functions import (main_menu, read_duckyscript, Keyboard_real_time_input, run, restart_bluetooth_daemon, get_target_address)
 from utils.register_device import register_hid_profile, agent_loop
 
 child_processes = []
@@ -630,6 +630,7 @@ def main():
 	print("\nAvailable payloads:")
 	for idx, payload_file in enumerate(payloads, 1): # Check and enumerate the files inside the payload folder.
 		print(f"{idx}: {payload_file}")
+	print("Press Enter to KeyboardInput")
 
 	payload_choice = input("\nEnter the number of the payload you want to load: ")
 	selected_payload = None
@@ -638,25 +639,39 @@ def main():
 		payload_index = int(payload_choice) - 1
 		selected_payload = os.path.join(payload_folder, payloads[payload_index])
 	except (ValueError, IndexError):
-		print("Invalid payload choice. No payload selected.")
+		print('Selected Keyboard Input. Input EXIT to exit')
+
+	adapter = setup_bluetooth(target_address, adapter_id)
+	adapter.enable_ssp()
+
+	current_line = 0
+	current_position = 0
+	connection_manager = L2CAPConnectionManager(target_address)
 
 	if selected_payload is not None:
 		print(f"Selected payload: {selected_payload}")
 		duckyscript = read_duckyscript(selected_payload)
-	else:
-		print("No payload selected.")
-
+	elif selected_payload is None:
+		while True:
+			try:
+				duckyscript = Keyboard_real_time_input()
+				if duckyscript == 'EXIT':
+					print("Exiting")
+					return
+				hid_interrupt_client = setup_and_connect(connection_manager, target_address, adapter_id)
+				process_duckyscript(hid_interrupt_client, duckyscript, current_line, current_position)
+			except ReconnectionRequiredException as e:
+				log.info("Reconnection required. Attempting to reconnect...")
+				current_line = e.current_line
+				current_position = e.current_position
+				connection_manager.close_all()
+				# Sleep before retrying to avoid rapid reconnection attempts
+				# time.sleep(2)
 	
 	if not duckyscript:
 		log.info("Payload file not found. Exiting.")
 		return
 
-	adapter = setup_bluetooth(target_address, adapter_id)
-	adapter.enable_ssp()
-	
-	current_line = 0
-	current_position = 0
-	connection_manager = L2CAPConnectionManager(target_address)
 
 	while True:
 		try:
@@ -672,7 +687,6 @@ def main():
 			# Sleep before retrying to avoid rapid reconnection attempts
 			#time.sleep(2)
 			
-	#process_duckyscript(hid_interrupt_client, duckyscript)
 
 if __name__ == "__main__":
 	setup_logging()
