@@ -131,11 +131,11 @@ class PairingAgent:
 
     def __enter__(self):
         try:
-            log.debug("Starting agent process...")
+            log.info("Starting agent process...") # before log.debug
             self.agent = Process(target=agent_loop, args=(self.target_path,))
             self.agent.start()
             time.sleep(0.25)
-            log.debug("Agent process started.")
+            log.info("Agent process started.") # before log.debug
             return self
         except Exception as e:
             log.error(f"Error starting agent process: {e}")
@@ -143,10 +143,10 @@ class PairingAgent:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            log.debug("Terminating agent process...")
+            log.info("Terminating agent process...") # before log.debug
             self.agent.kill()
             time.sleep(2)
-            log.debug("Agent process terminated.")
+            log.info("Agent process terminated.") # before log.debug
         except Exception as e:
             log.error(f"Error terminating agent process: {e}")
             raise
@@ -222,10 +222,10 @@ class L2CAPClient:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
         # Add the timestamp to your log message
-        log.debug(f"[{timestamp}][TX-{self.port}] Attempting to send data: {binascii.hexlify(data).decode()}")
+        log.info(f"[{timestamp}][TX-{self.port}] Attempting to send data: {binascii.hexlify(data).decode()}") # before log.debug
         try:
             self.attempt_send(data)
-            log.debug(f"[TX-{self.port}] Data sent successfully")
+            log.info(f"[TX-{self.port}] Data sent successfully") # before log.debug
         except bluetooth.btcommon.BluetoothError as ex:
             log.error(f"[TX-{self.port}] Bluetooth error: {ex}")
             self.reconnect()
@@ -254,11 +254,11 @@ class L2CAPClient:
             if self.sock is None:
                 return None
             try:
-                raw = self.sock.recv(64)
+                raw = self.sock.recv(1024)#(64)
                 if len(raw) == 0:
                     self.connected = False
                     return None
-                log.debug(f"[RX-{self.port}] Received data: {binascii.hexlify(raw).decode()}")
+                log.info(f"[RX-{self.port}] Received data: {binascii.hexlify(raw).decode()}") # before log.debug
             except bluetooth.btcommon.BluetoothError as ex:
                 if ex.errno != 11:  # no data available
                     raise ex
@@ -268,7 +268,7 @@ class L2CAPClient:
             return raw
 
     def connect(self, timeout=None):
-        log.debug(f"Attempting to connect to {self.addr} on port {self.port}")
+        log.info(f"Attempting to connect to {self.addr} on port {self.port}")
         log.info("connecting to %s on port %d" % (self.addr, self.port))
         sock = bluetooth.BluetoothSocket(bluetooth.L2CAP)
         sock.settimeout(timeout)
@@ -277,7 +277,7 @@ class L2CAPClient:
             sock.setblocking(0)
             self.sock = sock
             self.connected = True
-            log.debug("SUCCESS! connected on port %d" % self.port)
+            log.info("SUCCESS! connected on port %d" % self.port)
         except Exception as ex:
             self.connected = False
             log.error("ERROR connecting on port %d: %s" % (self.port, ex))
@@ -290,7 +290,7 @@ class L2CAPClient:
 
     def send_keypress(self, *args, delay=0.0001):
         if args:
-            log.debug(f"Attempting to send... {args}")
+            log.info(f"Attempting to send... {args}") # before log.debug
             self.send(self.encode_keyboard_input(*args))
             time.sleep(delay)
             # Send an empty report to release the key
@@ -676,22 +676,24 @@ def main():
     if selected_payload is not None:
         print(f"Selected payload: {selected_payload}")
         duckyscript = read_duckyscript(selected_payload)
-    elif selected_payload is None:
+    else:
+        #hid_interrupt_client = setup_and_connect(connection_manager, target_address, adapter_id)
         while True:
             try:
                 duckyscript = Keyboard_real_time_input()
                 if duckyscript[0] == 'EXIT':
                     print("Exiting")
                     return
-                hid_interrupt_client = setup_and_connect(connection_manager, target_address, adapter_id)
-                process_duckyscript(hid_interrupt_client, duckyscript, current_line, current_position)
+                process_duckyscript(setup_and_connect(connection_manager, target_address, adapter_id), duckyscript, current_line, current_position)
             except ReconnectionRequiredException as e:
                 log.info("Reconnection required. Attempting to reconnect...")
                 current_line = e.current_line
                 current_position = e.current_position
                 connection_manager.close_all()
+
             # Sleep before retrying to avoid rapid reconnection attempts
             # time.sleep(2)
+
 
     if not duckyscript:
         log.info("Payload file not found. Exiting.")
