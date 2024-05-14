@@ -307,7 +307,7 @@ def process_duckyscript(client, duckyscript, current_line=0, current_position=0)
 	time.sleep(0.5)
 
 	shift_required_characters = "!@#$%^&*()_+{}|:\"<>?ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	char_dir = {' ': 'Key_Codes.SPACE', '[': 'Key_Codes.LEFTBRACE', ']': 'Key_Codes.RIGHTBRACE', ';': 'Key_Codes.SEMICOLON', "'": 'Key_Codes.QUOTE', '/': 'Key_Codes.SLASH', '.': 'Key_Codes.DOT', ',': 'Key_Codes.COMMA', '|': 'Key_Codes.PIPE', '-': 'Key_Codes.MINUS', '=': 'Key_Codes.EQUAL'}
+	char_dir = {' ': 'SPACE', '[': 'LEFTBRACE', ']': 'RIGHTBRACE', ';': 'SEMICOLON', "'": 'QUOTE', '/': 'SLASH', '.': 'DOT', ',': 'COMMA', '|': 'PIPE', '-': 'MINUS', '=': 'EQUAL'}
 
 	try:
 		for line_number, line in enumerate(duckyscript):
@@ -368,7 +368,8 @@ def process_duckyscript(client, duckyscript, current_line=0, current_position=0)
 							client.send_keypress(key_code)
 						# Fixed
 						elif char in char_dir:
-							client.send_keypress(char_dir[char])
+							key_code = getattr(Key_Codes, char_dir[char])
+							client.send_keypress(key_code)
 						elif char in shift_required_characters:
 							key_code_str = char_to_key_code(char)
 							if key_code_str:
@@ -469,7 +470,7 @@ def char_to_key_code(char):
 		'X': 'x',
 		'Y': 'y',
 		'Z': 'z',
-	
+
 	}
 	return shift_char_map.get(char)
 
